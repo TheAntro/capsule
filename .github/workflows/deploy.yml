@@ -19,12 +19,9 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Verify SSH key loaded
-        run: ssh-add -l
-
       - name: Deploy to Server
         run: |
-          ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ secrets.APP_PATH }}
             echo "🔄 Pulling latest changes..."
             git fetch origin main
@@ -37,7 +34,7 @@ jobs:
             npm run build
 
             echo "♻️ Restarting PM2..."
-            pm2 restart myapp || pm2 start npm --name "myapp" -- start
+            pm2 restart capsule-next || pm2 start npm --name "capsule-next" -- start
 
             echo "✅ Deployment completed successfully!"
           EOF
