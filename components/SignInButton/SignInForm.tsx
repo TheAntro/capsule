@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 
-export default function SignInPage() {
+export default function SignInForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +27,7 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="max-w-md h-screen flex items-center justify-center flex-col mx-auto p-6 space-y-4 text-white">
+    <>
       <h1 className="text-2xl font-bold">Sign In</h1>
 
       {error && <p className="text-red-500">{error}</p>}
@@ -54,6 +54,6 @@ export default function SignInPage() {
           Sign In
         </button>
       </form>
-    </main>
+    </>
   );
 }
