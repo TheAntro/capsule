@@ -6,7 +6,6 @@ import SignInDialog from "./SignInDialog";
 
 export default function SignInButton() {
   const { data: session, isPending } = useSession();
-  console.log("Session data:", session);
 
   if (isPending) {
     return null;
