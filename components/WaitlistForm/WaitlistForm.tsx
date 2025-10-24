@@ -16,7 +16,7 @@ export default function WaitlistForm() {
   return (
     <form
       action={formAction}
-      className="w-full max-w-xl bg-gray-50/70 dark:bg-gray-800/70 p-8 rounded-lg shadow-sm space-y-6"
+      className="w-full max-w-xl bg-muted p-8 rounded-lg shadow-sm space-y-6"
       aria-label="Join the waitlist"
     >
       <div>
