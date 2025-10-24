@@ -30,6 +30,9 @@ jobs:
             echo "📦 Installing dependencies..."
             npm ci
 
+            echo "🛠️ Running database migrations..."
+            npx prisma migrate deploy
+
             echo "⚙️ Building Next.js app..."
             npm run build
 
