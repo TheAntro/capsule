@@ -11,6 +11,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/* Better Auth models */
+
 model User {
   id            String    @id
   name          String
@@ -21,6 +23,7 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  clothingItems ClothingItem[]
 
   @@unique([email])
   @@map("user")
@@ -69,4 +72,26 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+/* Clothing feature models */
+
+model ClothingItem {
+  id            String    @id @default(cuid())
+  name          String?   // Optional: AI can generate a name like "Blue Denim Jacket"
+  brand         String?
+  type          String?   // e.g., "T-Shirt", "Jeans"
+  color         String?
+  description   String?
+  price         Float?
+  datePurchased DateTime?
+  size          String?
+  imageUrlFront String    // This will store the public S3 URL
+  imageUrlBack  String    // This will store the public S3 URL
+  createdAt     DateTime  @default(now())
+
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@map("clothing_item")
 }
