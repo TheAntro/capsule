@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,15 +12,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"; // Import Dialog components
 import AddItemForm from "@/components/AddItemForm";
+import ClothingItemList from "@/components/ClothingItemList";
+import type { ClothingItemListRef } from "@/components/ClothingItemList/ClothingItemList";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const clothingListRef = useRef<ClothingItemListRef>(null);
 
   const handleSaveComplete = () => {
     setIsDialogOpen(false);
+    // Trigger refresh of the clothing list after a small delay to ensure DB write completes
+    setTimeout(() => {
+      clothingListRef.current?.refresh();
+    }, 300);
   };
 
   useEffect(() => {
@@ -52,6 +59,10 @@ export default function DashboardPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <div className="w-full flex-1 overflow-y-auto">
+        <h2 className="text-xl font-semibold mb-4">My Wardrobe</h2>
+        <ClothingItemList ref={clothingListRef} />
+      </div>
       <button
         onClick={() => signOut()}
         className="w-full bg-white text-black font-medium rounded-md px-4 py-2 hover:bg-gray-200"

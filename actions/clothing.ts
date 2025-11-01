@@ -70,3 +70,25 @@ export async function createClothingItem(
     };
   }
 }
+
+export async function getClothingItems() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return [];
+  }
+
+  try {
+    const items = await prisma.clothingItem.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return items;
+  } catch (error) {
+    console.error("Failed to fetch clothing items", error);
+    return [];
+  }
+}
