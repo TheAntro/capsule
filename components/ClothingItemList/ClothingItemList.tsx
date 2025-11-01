@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
+import { getClothingItems } from "@/actions/clothing";
+import Image from "next/image";
+import { Card } from "@/components/ui/card";
+
+type ClothingItem = {
+  id: string;
+  name: string | null;
+  brand: string | null;
+  description: string | null;
+  imageUrlFront: string;
+};
+
+async function getPresignedUrl(imageUrl: string): Promise<string> {
+  const response = await fetch("/api/upload/presign-get", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ imageUrl }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get presigned URL");
+  }
+
+  const data = await response.json();
+  return data.presignedUrl;
+}
+
+export type ClothingItemListRef = {
+  refresh: () => void;
+};
+
+const ClothingItemList = forwardRef<ClothingItemListRef>((props, ref) => {
+  const [items, setItems] = useState<ClothingItem[]>([]);
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const clothingItems = await getClothingItems();
+      setItems(clothingItems);
+
+      // Generate presigned URLs for all images
+      const urlMap: Record<string, string> = {};
+      await Promise.all(
+        clothingItems.map(async (item) => {
+          try {
+            const presignedUrl = await getPresignedUrl(item.imageUrlFront);
+            urlMap[item.id] = presignedUrl;
+          } catch (error) {
+            console.error(`Failed to get presigned URL for item ${item.id}:`, error);
+          }
+        })
+      );
+      setImageUrls(urlMap);
+    } catch (error) {
+      console.error("Failed to fetch clothing items:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    refresh: fetchItems,
+  }));
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center text-gray-400">Loading items...</div>;
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="text-center text-gray-400 py-8">
+        No clothing items yet. Add your first item!
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 w-full">
+      {items.map((item) => (
+        <Card key={item.id} className="p-4">
+          <div className="flex gap-4">
+            {/* Image on the left */}
+            <div className="flex-shrink-0">
+              {imageUrls[item.id] ? (
+                <Image
+                  src={imageUrls[item.id]}
+                  alt={item.name || "Clothing item"}
+                  width={80}
+                  height={80}
+                  className="rounded-lg object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-500 text-xs">Loading...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Content on the right */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-lg text-white mb-1 truncate">
+                {item.name || "Unnamed Item"}
+              </h3>
+              {item.brand && (
+                <p className="text-sm text-gray-400 mb-1">{item.brand}</p>
+              )}
+              {item.description && (
+                <p className="text-sm text-gray-500 line-clamp-2">{item.description}</p>
+              )}
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+});
+
+ClothingItemList.displayName = "ClothingItemList";
+
+export default ClothingItemList;
+
