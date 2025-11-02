@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,33 +42,29 @@ export default function DashboardPage() {
   const { user } = session;
 
   return (
-    <main className="max-w-md h-screen flex items-center justify-center flex-col mx-auto p-6 space-y-4 text-white">
+    <main className="max-w-md h-full flex items-center justify-center flex-col mx-auto p-6 space-y-4 text-white">
       <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p>Welcome, {user.name || "User"}!</p>
-      <p>Email: {user.email}</p>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button>+ Add New Item</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px] md:max-w-[600px] overflow-y-auto max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Add a New Clothing Item</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <AddItemForm onSaveComplete={handleSaveComplete} />
-          </div>
-        </DialogContent>
-      </Dialog>
-      <div className="w-full flex-1 overflow-y-auto">
-        <h2 className="text-xl font-semibold mb-4">My Wardrobe</h2>
-        <ClothingItemList ref={clothingListRef} />
+      <div className="w-full flex-1 overflow-y-auto flex flex-col space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">My Wardrobe</h2>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>+ Add New Item</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] md:max-w-[600px] overflow-y-auto max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle>Add a New Clothing Item</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <AddItemForm onSaveComplete={handleSaveComplete} />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div className="border rounded-lg bg-muted/50 p-4">
+          <ClothingItemList ref={clothingListRef} />
+        </div>
       </div>
-      <button
-        onClick={() => signOut()}
-        className="w-full bg-white text-black font-medium rounded-md px-4 py-2 hover:bg-gray-200"
-      >
-        Sign Out
-      </button>
     </main>
   );
 }

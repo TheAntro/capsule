@@ -204,7 +204,7 @@ export function AddItemForm({ onSaveComplete }: { onSaveComplete: () => void }) 
       <p className="text-sm text-center text-muted-foreground">Optional details:</p>
 
       {/* --- Optional Fields --- */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="price">Price</Label>
           <Input

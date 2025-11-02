@@ -2,7 +2,7 @@ import WaitlistForm from "@/components/WaitlistForm/WaitlistForm";
 
 export default function Home() {
   return (
-    <main className="h-screen flex flex-col gap-6 items-center justify-center">
+    <main className="h-full flex flex-col gap-6 items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-foreground mb-4">Welcome to Capsule</h1>
       </div>

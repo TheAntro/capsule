@@ -24,7 +24,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NavBar />
-          {children}
+          <div className="h-[calc(100vh-3rem)]">
+            {children}
+          </div>
           <Toaster />
         </ThemeProvider>
       </body>
