@@ -4,6 +4,7 @@ import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { getClothingItems } from "@/actions/clothing";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
+import { ShirtIcon } from "lucide-react";
 
 type ClothingItem = {
   id: string;
@@ -79,8 +80,9 @@ const ClothingItemList = forwardRef<ClothingItemListRef>((props, ref) => {
 
   if (items.length === 0) {
     return (
-      <div className="text-center text-gray-400 py-8">
-        No clothing items yet. Add your first item!
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <ShirtIcon className="w-12 h-12 mb-4" />
+        <p className="text-sm">No items yet</p>
       </div>
     );
   }
