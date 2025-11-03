@@ -88,6 +88,7 @@ model ClothingItem {
   size          String?
   imageUrlFront String    // This will store the public S3 URL
   imageUrlBack  String    // This will store the public S3 URL
+  inCapsule     Boolean   @default(false) // Whether the item is part of the capsule wardrobe
   createdAt     DateTime  @default(now())
 
   userId        String
