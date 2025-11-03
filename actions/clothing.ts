@@ -25,6 +25,42 @@ const itemSchema = z.object({
   size: z.string().optional(),
 });
 
+type ItemFieldErrors = Record<string, string[] | undefined>;
+
+type ClothActionResponse = {
+  success: boolean;
+  message: string;
+  fieldErrors?: ItemFieldErrors;
+};
+
+const updateItemSchema = z.object({
+  name: z.string().min(1, "Name is required.").optional(),
+  brand: z.union([z.string(), z.null()]).optional(),
+  type: z.union([z.string(), z.null()]).optional(),
+  color: z.union([z.string(), z.null()]).optional(),
+  description: z.union([z.string(), z.null()]).optional(),
+  size: z.union([z.string(), z.null()]).optional(),
+  imageUrlFront: z.string().url("Front image must be a valid URL.").optional(),
+  imageUrlBack: z.string().url("Back image must be a valid URL.").optional(),
+  price: z
+    .preprocess((value) => {
+      if (value === null || value === undefined || value === "") {
+        return null;
+      }
+
+      const parsed = typeof value === "string" ? parseFloat(value) : Number(value);
+      return Number.isNaN(parsed) ? NaN : parsed;
+    }, z.number().positive().nullable().optional()),
+  datePurchased: z.preprocess((value) => {
+    if (value === null || value === undefined || value === "") {
+      return null;
+    }
+
+    const date = typeof value === "string" ? new Date(value) : (value as Date);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }, z.date().nullable().optional()),
+});
+
 // This is the initial state for our useActionState hook
 type ClothingItemState = { message: string; errors: Record<string, string[] | undefined> };
 
@@ -90,5 +126,109 @@ export async function getClothingItems() {
   } catch (error) {
     console.error("Failed to fetch clothing items", error);
     return [];
+  }
+}
+
+export async function updateClothingItem({
+  id,
+  data,
+}: {
+  id: string;
+  data: Record<string, unknown>;
+}): Promise<ClothActionResponse> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return {
+      success: false,
+      message: "Unauthorized",
+    };
+  }
+
+  const item = await prisma.clothingItem.findFirst({
+    where: {
+      id,
+      userId: session.user.id,
+    },
+  });
+
+  if (!item) {
+    return {
+      success: false,
+      message: "Item not found.",
+    };
+  }
+
+  const validatedFields = updateItemSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      message: "Validation failed.",
+      fieldErrors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  const { datePurchased, ...rest } = validatedFields.data;
+
+  try {
+    await prisma.clothingItem.update({
+      where: { id },
+      data: {
+        ...rest,
+        datePurchased: datePurchased ?? null,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Item updated successfully.",
+    };
+  } catch (error) {
+    console.error("Failed to update item", error);
+    return {
+      success: false,
+      message: "Failed to update item.",
+    };
+  }
+}
+
+export async function deleteClothingItem(id: string): Promise<ClothActionResponse> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return {
+      success: false,
+      message: "Unauthorized",
+    };
+  }
+
+  const item = await prisma.clothingItem.findFirst({
+    where: {
+      id,
+      userId: session.user.id,
+    },
+  });
+
+  if (!item) {
+    return {
+      success: false,
+      message: "Item not found.",
+    };
+  }
+
+  try {
+    await prisma.clothingItem.delete({
+      where: { id },
+    });
+
+    return {
+      success: true,
+      message: "Item deleted successfully.",
+    };
+  } catch (error) {
+    console.error("Failed to delete item", error);
+    return {
+      success: false,
+      message: "Failed to delete item.",
+    };
   }
 }
