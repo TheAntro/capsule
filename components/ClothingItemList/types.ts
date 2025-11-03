@@ -10,4 +10,5 @@ export type ClothingItemWithDetails = {
   price: number | null;
   datePurchased: string | Date | null;
   size: string | null;
+  inCapsule: boolean;
 };

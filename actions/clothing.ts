@@ -232,3 +232,49 @@ export async function deleteClothingItem(id: string): Promise<ClothActionRespons
     };
   }
 }
+
+export async function toggleCapsule(id: string): Promise<ClothActionResponse> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return {
+      success: false,
+      message: "Unauthorized",
+    };
+  }
+
+  const item = await prisma.clothingItem.findFirst({
+    where: {
+      id,
+      userId: session.user.id,
+    },
+  });
+
+  if (!item) {
+    return {
+      success: false,
+      message: "Item not found.",
+    };
+  }
+
+  try {
+    await prisma.clothingItem.update({
+      where: { id },
+      data: {
+        inCapsule: !item.inCapsule,
+      },
+    });
+
+    return {
+      success: true,
+      message: item.inCapsule
+        ? "Item removed from capsule."
+        : "Item added to capsule.",
+    };
+  } catch (error) {
+    console.error("Failed to toggle capsule status", error);
+    return {
+      success: false,
+      message: "Failed to update item.",
+    };
+  }
+}
