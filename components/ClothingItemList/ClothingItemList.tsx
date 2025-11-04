@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useImperativeHandle, forwardRef, useCallback } from "react";
-import { getClothingItems, toggleCapsule } from "@/actions/clothing";
+import { toggleCapsule } from "@/actions/clothing";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,74 +10,39 @@ import EditClothingItemDialog from "./EditClothingItemDialog";
 import { ClothingItemWithDetails } from "./types";
 import { toast } from "sonner";
 
-async function getPresignedUrl(imageUrl: string): Promise<string> {
-  const response = await fetch("/api/upload/presign-get", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ imageUrl }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to get presigned URL");
-  }
-
-  const data = await response.json();
-  return data.presignedUrl;
-}
-
 export type ClothingItemListRef = {
   refresh: () => void;
 };
 
 type ClothingItemListProps = {
+  items: ClothingItemWithDetails[];
+  imageUrls: Record<string, string>;
+  loading: boolean;
   filter?: "all" | "capsule" | "attic";
-  onToggle?: () => void;
+  onToggle?: (itemId: string, newInCapsuleValue: boolean) => void;
+  onRefresh?: () => void;
 };
 
 const ClothingItemList = forwardRef<ClothingItemListRef, ClothingItemListProps>(
-  ({ filter = "all", onToggle }, ref) => {
-    const [items, setItems] = useState<ClothingItemWithDetails[]>([]);
-    const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
-    const [loading, setLoading] = useState(true);
+  ({ items, imageUrls, loading, filter = "all", onToggle, onRefresh }, ref) => {
+    const [localItems, setLocalItems] = useState<ClothingItemWithDetails[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<ClothingItemWithDetails | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
-    const fetchItems = useCallback(async () => {
-      try {
-        setLoading(true);
-        const clothingItems = await getClothingItems();
-        setItems(clothingItems);
+    // Update local items when props change
+    useEffect(() => {
+      setLocalItems(items);
+    }, [items]);
 
-        // Generate presigned URLs for all images
-        const urlMap: Record<string, string> = {};
-        await Promise.all(
-          clothingItems.map(async (item) => {
-            try {
-              const presignedUrl = await getPresignedUrl(item.imageUrlFront);
-              urlMap[item.id] = presignedUrl;
-            } catch (error) {
-              console.error(`Failed to get presigned URL for item ${item.id}:`, error);
-            }
-          })
-        );
-        setImageUrls(urlMap);
-      } catch (error) {
-        console.error("Failed to fetch clothing items:", error);
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+    const refreshFromParent = useCallback(() => {
+      // Trigger refresh in parent component
+      onRefresh?.();
+    }, [onRefresh]);
 
     useImperativeHandle(ref, () => ({
-      refresh: fetchItems,
+      refresh: refreshFromParent,
     }));
-
-    useEffect(() => {
-      fetchItems();
-    }, [fetchItems]);
 
     const handleCardClick = (item: ClothingItemWithDetails) => {
       setSelectedItem(item);
@@ -95,16 +60,44 @@ const ClothingItemList = forwardRef<ClothingItemListRef, ClothingItemListProps>(
       e.stopPropagation();
       setTogglingId(itemId);
 
+      // Find the item to toggle
+      const itemToToggle = localItems.find((item) => item.id === itemId);
+      if (!itemToToggle) return;
+
+      const newInCapsuleValue = !itemToToggle.inCapsule;
+
+      // Optimistic update - update local state immediately
+      setLocalItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, inCapsule: newInCapsuleValue } : item
+        )
+      );
+
+      // Notify parent immediately for capsule count update
+      onToggle?.(itemId, newInCapsuleValue);
+
       try {
         const result = await toggleCapsule(itemId);
         if (result.success) {
           toast.success(result.message);
-          await fetchItems();
-          onToggle?.();
         } else {
+          // Revert on error
+          setLocalItems((prev) =>
+            prev.map((item) =>
+              item.id === itemId ? { ...item, inCapsule: !newInCapsuleValue } : item
+            )
+          );
+          onToggle?.(itemId, !newInCapsuleValue);
           toast.error(result.message);
         }
       } catch (error) {
+        // Revert on error
+        setLocalItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId ? { ...item, inCapsule: !newInCapsuleValue } : item
+          )
+        );
+        onToggle?.(itemId, !newInCapsuleValue);
         console.error("Failed to toggle capsule:", error);
         toast.error("Failed to update item");
       } finally {
@@ -117,7 +110,7 @@ const ClothingItemList = forwardRef<ClothingItemListRef, ClothingItemListProps>(
     }
 
     // Filter items based on the filter prop
-    const filteredItems = items.filter((item) => {
+    const filteredItems = localItems.filter((item) => {
       if (filter === "capsule") return item.inCapsule;
       if (filter === "attic") return !item.inCapsule;
       return true; // "all"
@@ -214,8 +207,8 @@ const ClothingItemList = forwardRef<ClothingItemListRef, ClothingItemListProps>(
           open={dialogOpen}
           item={selectedItem}
           onOpenChange={handleDialogChange}
-          onUpdated={fetchItems}
-          onDeleted={fetchItems}
+          onUpdated={onRefresh}
+          onDeleted={onRefresh}
         />
       </>
     );
