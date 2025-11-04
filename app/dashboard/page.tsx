@@ -105,8 +105,8 @@ export default function DashboardPage() {
   if (!session?.user) return <p className="text-center mt-8 text-white">Redirecting...</p>;
 
   return (
-    <main className="max-w-md h-full flex items-center justify-center flex-col mx-auto p-6 space-y-4 text-white">
-      <div className="w-full flex-1 overflow-y-auto flex flex-col space-y-4">
+    <main className="max-w-md w-full flex flex-col mx-auto p-6 space-y-4 text-white">
+      <div className="w-full flex flex-col space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">My Wardrobe</h1>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

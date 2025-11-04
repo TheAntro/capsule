@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className="antialiased overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -24,7 +24,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NavBar />
-          <div className="h-[calc(100vh-3rem)]">
+          <div className="min-h-[calc(100vh-3rem)]">
             {children}
           </div>
           <Toaster />
