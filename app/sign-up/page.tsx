@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/auth-client";
+import { isEmailAllowed } from "@/actions/auth";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -13,17 +14,25 @@ export default function SignUpPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+
+    // Check if email is allowed before attempting sign-up
+    const emailIsAllowed = await isEmailAllowed(email);
+    if (!emailIsAllowed) {
+      setError("Sign up is currently invite-only. Please contact us for access.");
+      return;
+    }
 
     const res = await signUp.email({
       name: formData.get("name") as string,
-      email: formData.get("email") as string,
+      email: email,
       password: formData.get("password") as string,
     });
 
     if (res.error) {
       setError(res.error.message || "Something went wrong.");
     } else {
-      router.push("/dashboard");
+      router.push("/");
     }
   }
 
