@@ -1,43 +1,45 @@
-name: 🚀 Deploy to Production
+name: Deploy to Server
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
-    name: Deploy Next.js App
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.8.0
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy to Server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # 1. Navigate to the project directory
             cd ${{ secrets.APP_PATH }}
-            echo "🔄 Pulling latest changes..."
-            git fetch origin main
-            git reset --hard origin/main
 
-            echo "📦 Installing dependencies..."
-            npm ci
+            # 2. Pull the latest changes
+            git pull
 
-            echo "🛠️ Running database migrations..."
-            npx prisma migrate deploy
+            # 3. Create/Overwrite the .env file with secrets for runtime
+            # We use > for the first line to clear the file, and >> to append
+            echo "DATABASE_URL=file:/app/data/prod.db" > .env
+            echo "BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}" >> .env
+            echo "BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}" >> .env
+            echo "ALLOWED_USERS=${{ secrets.ALLOWED_USERS }}" >> .env
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+            echo "AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}" >> .env
+            echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
 
-            echo "⚙️ Building Next.js app..."
-            npm run build
+            # 4. Build and Restart the containers
+            # --build forces the Intel server to re-compile better-sqlite3
+            # -d runs it in the background
+            docker compose up -d --build
 
-            echo "♻️ Restarting PM2..."
-            pm2 restart capsule-next || pm2 start npm --name "capsule-next" -- start
-
-            echo "✅ Deployment completed successfully!"
-          EOF
+            # 5. Optional: Clean up old unused images to save disk space
+            docker image prune -f
