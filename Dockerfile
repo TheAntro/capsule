@@ -34,8 +34,9 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 
-RUN mkdir -p .next/lib/binding/node-v127-linux-x64
-COPY --from=builder /app/node_modules/better-sqlite3/build/Release/better_sqlite3.node ./.next/lib/binding/node-v127-linux-x64/better_sqlite3.node
+ARG TARGETARCH
+RUN mkdir -p .next/lib/binding/node-v127-linux-${TARGETARCH}
+COPY --from=builder /app/node_modules/better-sqlite3/build/Release/better_sqlite3.node ./.next/lib/binding/node-v127-linux-${TARGETARCH}/better_sqlite3.node
 
 # 3. Copy the rest of pruned node_modules for Prisma CLI
 COPY --from=builder /app/node_modules ./node_modules
