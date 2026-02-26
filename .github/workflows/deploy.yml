@@ -18,13 +18,17 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 1. Navigate to the project directory
+            # Create the data and the app dirs if they do not exist
+            mkdir -p ~/data/capsule
+            mkdir -p ${{ secrets.APP_PATH }}
             cd ${{ secrets.APP_PATH }}
 
-            # 2. Pull the latest changes
-            git pull
+            if [ ! -d ".git" ]; then
+              git clone ${{ vars.REPO }} .
+            else
+              git pull
+            fi
 
-            # 3. Create/Overwrite the .env file with secrets for runtime
             # We use > for the first line to clear the file, and >> to append
             echo "DATABASE_URL=file:/app/data/prod.db" > .env
             echo "BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}" >> .env
@@ -36,10 +40,5 @@ jobs:
             echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
             echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
 
-            # 4. Build and Restart the containers
-            # --build forces the Intel server to re-compile better-sqlite3
-            # -d runs it in the background
             docker compose up -d --build
-
-            # 5. Optional: Clean up old unused images to save disk space
             docker image prune -f
