@@ -6,7 +6,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./database:/app/data
+      - ~/data/capsule:/app/data
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
@@ -20,4 +20,4 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G # Prevents the "Killed" error on your server
+          memory: 1G
