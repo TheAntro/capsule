@@ -33,7 +33,6 @@ jobs:
             echo "DATABASE_URL=file:/app/data/prod.db" > .env
             echo "BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}" >> .env
             echo "BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}" >> .env
-            echo "ALLOWED_USERS=${{ secrets.ALLOWED_USERS }}" >> .env
             echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
             echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
             echo "AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}" >> .env
